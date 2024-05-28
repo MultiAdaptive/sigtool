@@ -133,7 +133,6 @@ version = "0.1.0"
 dependencies = [
  "bitcoin",
  "rand",
- "secp256k1",
 ]
 
 [[package]]

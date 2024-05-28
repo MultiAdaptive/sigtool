@@ -1,35 +1,39 @@
-use {
-    bitcoin::{
-        blockdata::{opcodes, script},
-        key::PrivateKey,
-        key::{TapTweak, TweakedKeyPair, KeyPair,TweakedPublicKey, UntweakedKeyPair},
-        policy::MAX_STANDARD_TX_WEIGHT,
-        secp256k1::{self, constants::SCHNORR_SIGNATURE_SIZE, Secp256k1, XOnlyPublicKey},
-        sighash::{Prevouts, SighashCache, TapSighashType},
-        taproot::Signature,
-        taproot::{ControlBlock, LeafVersion, TapLeafHash, TaprootBuilder},
-    },
+use bitcoin::Error;
+use bitcoin::{
+    blockdata::{opcodes, script::ScriptBuf, transaction::Transaction},
+    key::PrivateKey,
+    key::{KeyPair, TapTweak, TweakedKeyPair, TweakedPublicKey, UntweakedKeyPair},
+    policy::MAX_STANDARD_TX_WEIGHT,
+    secp256k1::{self, constants::SCHNORR_SIGNATURE_SIZE, Secp256k1, schnorr::Signature,XOnlyPublicKey},
+    sighash::{TapSighash,Prevouts, SighashCache, TapSighashType},
+    taproot::{ControlBlock, LeafVersion, TapLeafHash, TaprootBuilder},
 };
+
 pub struct SigTool {
-    pub key_pair: KeyPair
+    pub key_pair: KeyPair,
 }
 
 impl SigTool {
-    pub fn new() {
+    pub fn new() -> Result<Self, Error> {
         let secp256k1 = Secp256k1::new();
         let key_pair = UntweakedKeyPair::new(&secp256k1, &mut rand::thread_rng());
+        Ok(SigTool { key_pair })
     }
 
-    // 请求签名时传入的参数
-    // 1. TapSighash
+    // 1. sighash
+    // 2. reveal_tx
     // 2. reveal_script
     // 3. data
-    // pub fn sig(reveal_tx: transaction, commit_input: usize, prevouts: Vec<TxOut>, reveal_script: ScriptBuf) -> Signature {
-    //     // todo
-    //     Signature::from_slice(&[1]).expect("")
-    // }
+    pub fn sig(&self, sighash: TapSighash, reveal_tx: Transaction, reveal_script: ScriptBuf) -> Signature {
+        let secp256k1 = Secp256k1::new();
+        let key_pair = self.key_pair.clone();
+        secp256k1.sign_schnorr(
+            &secp256k1::Message::from_slice(sighash.as_ref())
+                .expect("should be cryptographically secure hash"),
+            &key_pair,
+        )
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
