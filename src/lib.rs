@@ -20,6 +20,10 @@ impl SigTool {
         Ok(SigTool { key_pair })
     }
 
+    pub fn from_key_pair(key_pair: KeyPair) -> Result<Self, Error> {
+        Ok(SigTool{key_pair})
+    }
+
     // 1. sighash
     // 2. reveal_tx
     // 2. reveal_script
