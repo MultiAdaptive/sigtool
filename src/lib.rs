@@ -37,6 +37,16 @@ impl SigTool {
             &key_pair,
         )
     }
+
+    pub fn sig_ex(&self, sighash: TapSighash) -> Signature {
+        let secp256k1 = Secp256k1::new();
+        let key_pair = self.key_pair.clone();
+        secp256k1.sign_schnorr(
+            &secp256k1::Message::from_slice(sighash.as_ref())
+                .expect("should be cryptographically secure hash"),
+            &key_pair,
+        )
+    }
 }
 
 #[cfg(test)]
