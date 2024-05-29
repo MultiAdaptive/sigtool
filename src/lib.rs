@@ -1,4 +1,4 @@
-use bitcoin::Error;
+use bitcoin::{Error, TxOut};
 use bitcoin::{
     blockdata::{opcodes, script::ScriptBuf, transaction::Transaction},
     key::PrivateKey,
@@ -24,11 +24,19 @@ impl SigTool {
         Ok(SigTool{key_pair})
     }
 
-    // 1. sighash
-    // 2. reveal_tx
-    // 2. reveal_script
-    // 3. data
-    pub fn sig(&self, sighash: TapSighash, reveal_tx: Transaction, reveal_script: ScriptBuf) -> Signature {
+    // 1. reveal_tx
+    // 2. commit_input
+    // 3. prevouts
+    // 4. reveal_script
+    pub fn sig(&self, mut reveal_tx: Transaction, commit_input: usize, prevouts: Vec<TxOut>, reveal_script: ScriptBuf) -> Signature {
+        let mut sighash_cache = SighashCache::new(&mut reveal_tx);
+        let sighash = sighash_cache.taproot_script_spend_signature_hash(
+            commit_input,
+            &Prevouts::All(&prevouts),
+            TapLeafHash::from_script(&reveal_script, LeafVersion::TapScript),
+            TapSighashType::Default,
+        ).expect("signature hash should compute");
+
         let secp256k1 = Secp256k1::new();
         let key_pair = self.key_pair.clone();
         secp256k1.sign_schnorr(
